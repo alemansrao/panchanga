@@ -37,6 +37,7 @@ import { computeKarana } from "./lib/karana";
 import { computeRiseSet } from "./lib/riseSet";
 import { computeSamvatsara } from "./lib/samvatsara";
 import { computeLagna } from "./lib/lagna";
+import { computeChandraMasa } from "./lib/chandraMasa";
 // ---- NEW: Finder imports ----
 import {
   findTithiByMasaPaksha,
@@ -101,6 +102,8 @@ export default function PanchangaLive() {
   const [ruthu, setRuthu] = useState(null);
   const [karana, setKarana] = useState(null);
   const [lagna, setLagna] = useState(null);
+  const [chandraMasa, setChandraMasa] = useState(null);
+
   // const [showDayProgress, setShowDayProgress] = useState(true);
   // ---- NEW: Additional Cards state ----
   const [riseSet, setRiseSet] = useState(null);          // {sunrise, sunset, dayLengthMs}
@@ -191,6 +194,7 @@ export default function PanchangaLive() {
     setAyana(computeAyana(swe, jd));
     setRuthu(computeRuthu(swe, jd));
     setKarana(computeKarana(swe, jd));
+    setChandraMasa(computeChandraMasa(swe, jd));
     // Lagna (ascendant) depends on observer location
     try {
       setLagna(computeLagna(swe, jd, { lat: observerLatRef.current, lon: observerLonRef.current }));
@@ -500,9 +504,11 @@ export default function PanchangaLive() {
             <Card title="Yoga" name={yoga?.name || "-"} meta={yoga?.meta} times={yoga?.times} progress={yoga?.progress || 0} Icon={TbScale} />
             <Card title="Karana" name={karana?.name || "-"} meta={karana?.meta} times={karana?.times} progress={karana?.progress || 0} Icon={IoMdTime} />
             <Card title="Saura Māsa" name={saura?.name || "-"} meta={saura?.meta} times={saura?.times} progress={saura?.progress || 0} Icon={TiWeatherPartlySunny} />
+            <Card title="Chandra Māsa" name={chandraMasa?.name} meta={chandraMasa?.meta} times={chandraMasa?.times} Icon={HiMoon} progress={chandraMasa?.progress} barColor={chandraMasa?.isAdhika ? "bg-amber-400" : chandraMasa?.hasKshaya ? "bg-rose-400" : "bg-emerald-400"}/>
             <Card title="Ruthu" name={ruthu?.name || "-"} meta={ruthu?.meta} times={ruthu?.times} progress={ruthu?.progress || 0} Icon={FaCloudMoonRain} />
             <Card title="Ayana" name={ayana?.name || "-"} meta={ayana?.meta} times={ayana?.times} progress={ayana?.progress || 0} Icon={FiSun} />
             <Card title="Samvatsara" name={samvatsara?.name || "-"} meta={samvatsara?.meta} times={samvatsara?.times} progress={samvatsara?.progress || 0} Icon={FiSun} />
+
 
             {/* --- Find Tithi by Solar (Saura) Māsa / Paksha / Tithi --- */}
             <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-4 col-span-1 md:col-span-2">

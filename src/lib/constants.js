@@ -74,3 +74,18 @@ export const YOGA = ["Vishakumbha",
 	"Brahma",
 	"Indra",
 	"Vaidhriti"];
+
+export const CHANDRA_MASA_NAMES = [
+	"Chaitra",
+	"Vaishakha",
+	"Jyeshtha",
+	"Ashadha",
+	"Shravana",
+	"Bhadrapada",
+	"Ashwin",
+	"Kartika",
+	"Margashirsha",
+	"Pausha",
+	"Magha",
+	"Phalguna",
+];

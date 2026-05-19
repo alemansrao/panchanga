@@ -260,8 +260,12 @@ export default function PanchangaLive() {
         tick1 = setInterval(updateClocks, 1_000);
         updateClocks();
       } catch (e) {
-        console.error(e);
-        setStatus({ text: "Error loading Swiss Ephemeris (check console)", cls: "err" });
+        console.error("Swiss Ephemeris init failed:", e);
+
+        setStatus({
+          text: `Error loading Swiss Ephemeris: ${e?.message || String(e)}`,
+          cls: "err",
+        });
       }
     })();
     return () => {

@@ -28,8 +28,8 @@ const Card = ({
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   return (
-    <div className={`bg-gray-800/50 border border-gray-700 rounded-xl p-4 ${spanClass}`}>
-      <div className="text-xs text-gray-400 flex flex-row items-center gap-1 justify-between">
+    <div className={`cred-card ${spanClass}`}>
+      <div className="text-xs cred-subtle flex flex-row items-center gap-1 justify-between">
         <span>{title}</span>
 
         <div
@@ -50,19 +50,19 @@ const Card = ({
                   ease: 'easeInOut'
                 }}
               >
-                <Icon className="w-4 h-4 text-gray-100" />
+                <Icon className="w-4 h-4 text-white" />
               </motion.span>
             ) : null}
           </AnimatePresence>
         </div>
       </div>
 
-      <div className="font-semibold text-lg mt-1">{name}</div>
-      {meta ? <div className="text-xs text-gray-400 mt-1">{meta}</div> : null}
-      {times ? <div className="text-xs text-gray-400 mt-2">{times}</div> : null}
+      <div className="font-semibold text-lg mt-1 text-white">{name}</div>
+      {meta ? <div className="text-xs cred-subtle mt-1">{meta}</div> : null}
+      {times ? <div className="text-xs cred-subtle mt-2">{times}</div> : null}
 
       <div className="mt-3">
-        <div className="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
+        <div className="w-full bg-[rgba(255,255,255,0.03)] rounded-full h-2 overflow-hidden">
           <motion.div
             className={`h-2 ${barColor}`}
             initial={{ width: 0 }}

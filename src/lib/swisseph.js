@@ -1,13 +1,19 @@
 
 import { norm360, angleDiffSigned } from "./math";
 
+
 export const initSwiss = async () => {
-  const mod = await import("https://cdn.jsdelivr.net/gh/prolaxu/swisseph-wasm@main/src/swisseph.js");
+  const mod = await import("./swisseph-local/swisseph.js");
   const SwissEph = mod.default;
-  const swe = new SwissEph();
+
+  const swe = new SwissEph({
+    locateFile: (file) => `/swisseph/${file}`  // ✅ IMPORTANT
+  });
+
   await swe.initSwissEph();
   return swe;
 };
+
 
 export const setTopo = (swe, lon, lat, alt = 0) => {
   if (swe?.set_topo) swe.set_topo(lon, lat, alt);

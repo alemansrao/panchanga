@@ -22,3 +22,5 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+Combine-FolderContents.ps1
+CombinedContent.txt

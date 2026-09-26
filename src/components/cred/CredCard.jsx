@@ -29,7 +29,6 @@ export default function CredCard({ children, className = '', onClick, title }) {
       onPointerLeave={handlePointerLeave}
       onClick={onClick}
       className={`cred-card ${className}`}
-      whileHover={{ y: -6 }}
       transition={{ type: 'spring', stiffness: 220, damping: 24 }}
     >
       {title ? <div className="text-xs cred-subtle mb-2">{title}</div> : null}

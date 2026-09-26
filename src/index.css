@@ -9,19 +9,7 @@
 /* ----------------------------- */
 :root {
 	--cred-bg: #0A0A0A;
-	--cred-surface: #111111;
-	--cred-card: #151515;
-	--cred-accent: #FFFFFF;
-	--cred-accent-2: #A8F0FF;
-	--cred-pastel-pink: #FFD6EA;
-	--cred-glow: rgba(255,255,255,0.08);
-	--cred-glow-strong: rgba(255,255,255,0.12);
-	--cred-noise: rgba(255,255,255,0.02);
 	--radius-card: 24px;
-	--radius-button: 16px;
-	--glass-blur: 12px;
-	--glass-contrast: rgba(255,255,255,0.03);
-	--metallic-gradient: linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
 	--shadow-soft: 0 10px 30px rgba(0,0,0,0.6), inset 0 -1px 0 rgba(255,255,255,0.02);
 }
 
@@ -41,15 +29,6 @@ body {
 	background-attachment: fixed;
 }
 
-/* Glass surface */
-.cred-glass {
-	background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-	border: 1px solid rgba(255,255,255,0.04);
-	backdrop-filter: blur(var(--glass-blur));
-	-webkit-backdrop-filter: blur(var(--glass-blur));
-	border-radius: var(--radius-card);
-	box-shadow: var(--shadow-soft);
-}
 
 /* Card */
 .cred-card {
@@ -74,91 +53,12 @@ body {
 	pointer-events: none;
 }
 
-
-/* Spotlight cursor */
-.cred-spotlight {
-	position: fixed;
-	left: 0;
-	top: 0;
-	width: 320px;
-	height: 320px;
-	border-radius: 50%;
-	pointer-events: none;
-	transform: translate(-50%, -50%);
-	mix-blend-mode: screen;
-	background: radial-gradient(circle at 40% 30%, rgba(255,255,255,0.12), rgba(255,255,255,0.02) 30%, transparent 60%);
-	filter: blur(40px);
-	opacity: 0;
-	transition: opacity 250ms ease, transform 120ms ease;
-	z-index: 9999;
-}
-
-/* Cred Button */
-.cred-button {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	padding: 0.6rem 1.1rem;
-	border-radius: var(--radius-button);
-	color: #0B0B0B;
-	background: linear-gradient(90deg, #ffffff, rgba(255,255,255,0.95));
-	box-shadow: 0 8px 24px rgba(0,0,0,0.6), 0 1px 0 rgba(255,255,255,0.02) inset;
-	font-weight: 700;
-	letter-spacing: 0.6px;
-	transform: translateZ(0);
-	transition: transform 280ms cubic-bezier(.2,.9,.2,1), box-shadow 200ms;
-}
-
-/* Magnetic hover */
-.cred-button.magnetic {
-	will-change: transform;
-	transition: transform 260ms cubic-bezier(.2,.9,.2,1);
-}
-.cred-button:active {
-	transform: scale(0.98);
-}
-.cred-button:hover {
-	transform: translateY(-4px) scale(1.02);
-	box-shadow: 0 20px 40px rgba(0,0,0,0.65);
-}
-
-/* Glossy CTA */
-.cred-cta {
-	background: linear-gradient(90deg, rgba(255,255,255,0.98), rgba(163,227,255,0.06));
-	color: #0B0B0B;
-}
-
-/* Typography */
-.cred-hero-title {
-	font-size: clamp(2.6rem, 6vw, 5rem);
-	line-height: 0.95;
-	letter-spacing: -0.02em;
-	font-weight: 800;
-	color: #FFFFFF;
-}
-
-.cred-muted { color: rgba(255,255,255,0.7); }
 .cred-subtle { color: rgba(255,255,255,0.55); }
 
-.cred-slider { scroll-snap-type: x mandatory; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-.cred-slider > * { scroll-snap-align: center; }
-
-.cred-noise {
-	pointer-events: none;
-	position: fixed;
-	inset: 0;
-	background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200' opacity='0.03'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
-	opacity: var(--noise-opacity, 0.03);
-	mix-blend-mode: overlay;
-	z-index: 999;
-}
-
-.shadow-cred { box-shadow: 0 12px 40px rgba(0,0,0,0.65); }
-
-.text-cred-accent { color: var(--cred-accent-2); }
-.bg-cred-surface { background: var(--cred-surface); }
-.rounded-cred { border-radius: var(--radius-card); }
 
 @media (prefers-reduced-motion: reduce) {
-	.cred-card, .cred-button, .cred-hero-title, .cred-spotlight { transition: none !important; animation: none !important; }
+  .cred-card {
+    transition: none !important;
+    animation: none !important;
+  }
 }

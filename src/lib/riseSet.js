@@ -91,7 +91,7 @@ const findAltitudeCrossing = (swe, h0Deg, { jdStart, jdEnd, lat, lon }) => {
   return null;
 };
 
-export const computeRiseSet = (swe, dateLocal, { lat, lon, alt = 0 }) => {
+export const computeRiseSet = (swe, dateLocal, { lat, lon }) => {
   const local = new Date(dateLocal);
   local.setHours(0, 0, 0, 0);
   const jd0 = dateToJdUT(local);
@@ -128,8 +128,6 @@ export const computeRiseSet = (swe, dateLocal, { lat, lon, alt = 0 }) => {
 
   const prevSunset = prevSunsetJd ? jdToDate(prevSunsetJd) : null;
   const nextSunrise = nextSunriseJd ? jdToDate(nextSunriseJd) : null;
-
-  const dayLengthMs = sunrise && sunset ? (sunset - sunrise) : null;
 
   const now = dateLocal;
   let phase = "day";
@@ -196,52 +194,13 @@ export const computeRiseSet = (swe, dateLocal, { lat, lon, alt = 0 }) => {
     }
   }
 
-  // Convenience formatted strings
-  const formatedSunrise = jdToMonthDayHM(sunriseJd);
-  const formatedSunset = jdToMonthDayHM(sunsetJd);
-  const formatedPrevSunset = jdToMonthDayHM(prevSunsetJd);
-  const formatedNextSunrise = jdToMonthDayHM(nextSunriseJd);
-
   const formatedDisplayLeft = jdToMonthDayHM(displayLeftJd);
   const formatedDisplayRight = jdToMonthDayHM(displayRightJd);
 
-  // Optional compact "times" & "meta"
-  const times = `${sunriseJd ? jdToLocalStringCompact(sunriseJd) : "-"} ↔ ${sunsetJd ? jdToLocalStringCompact(sunsetJd) : "-"
-    }`;
-
-  let meta = "-";
-  if (sunrise && sunset) {
-    const hrs = Math.floor(dayLengthMs / 3600000);
-    const mins = Math.round((dayLengthMs % 3600000) / 60000);
-    meta = `Sunrise: ${jdToLocalStringCompact(sunriseJd)} • Sunset: ${jdToLocalStringCompact(
-      sunsetJd
-    )} • Day length: ${hrs}h ${mins}m`;
-  }
+  
 
   return {
-    // raw Date objects
-    sunrise,
-    sunset,
-    prevSunset,
-    nextSunrise,
-
-    sunriseJd,
-    sunsetJd,
-    prevSunsetJd,
-    nextSunriseJd,
-
-    dayLengthMs,
-    meta,
-    times,
-
-    phase,
     progress,
-
-    formatedSunrise,
-    formatedSunset,
-    formatedPrevSunset,
-    formatedNextSunrise,
-
     displayLeftType,
     displayRightType,
     formatedDisplayLeft,

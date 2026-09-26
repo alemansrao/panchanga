@@ -32,27 +32,6 @@ const getZonedParts = (date, timeZone) => {
   return values;
 };
 
-/*
- * Convert Julian Day to a human-readable local date/time.
- *
- * timeZone is optional for backward compatibility.
- */
-export const jdToLocalString = (jd, timeZone) => {
-  const ms = (jd - JD_UNIX_EPOCH) * 86400000;
-  const d = new Date(ms);
-
-  return new Intl.DateTimeFormat(undefined, {
-    weekday: "short",
-    year: "numeric",
-    month: "short",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: false,
-    ...(timeZone ? { timeZone } : {}),
-  }).format(d);
-};
 
 /*
  * Convert Julian Day to compact local date/time.

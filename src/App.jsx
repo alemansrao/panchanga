@@ -23,7 +23,7 @@ import { MdOutlineStar } from "react-icons/md";
 import { TbZodiacCancer } from "react-icons/tb";
 import Card from "./components/Card";
 // ---- lib imports ----
-import { initSwiss, setTopo, sunTropical, moonTropical, buildFuncs } from "./lib/swisseph";
+import { initSwiss, setTopo, sunTropical, moonTropical } from "./lib/swisseph";
 import {
   toInputLocal,
   localDateTimeToDate,
@@ -286,20 +286,9 @@ export default function PanchangaLive() {
   const observerLonRef = useRef(location.lon);
   const observerAltRef = useRef(0);
 
-  // Prevent the initial URL datetime from being
-  // overwritten by the timezone initialization effect.
-  const urlDateTimeLoadedRef = useRef(
-    initialConfig.hasUrlDateTime
-  );
-
   // --- Swiss Ephemeris instance ---
   const sweRef = useRef(null);
 
-  // --- UI state ---
-  const [status, setStatus] = useState({
-    text: "Loading Swiss Ephemeris…",
-    cls: "muted",
-  });
 
   const [nowString, setNowString] = useState("-");
 
@@ -317,10 +306,6 @@ export default function PanchangaLive() {
       )
   );
 
-  // Longitudes for debug/visibility panel
-  const [sunLon, setSunLon] = useState("-");
-  const [moonLon, setMoonLon] = useState("-");
-  const [moonLonSid, setMoonLonSid] = useState("-");
 
   // Moon phase for Tithi card icon
   const [moonPhase, setMoonPhase] = useState(null);
@@ -337,7 +322,6 @@ export default function PanchangaLive() {
   const [lagna, setLagna] = useState(null);
   const [chandraMasa, setChandraMasa] = useState(null);
 
-  // const [showDayProgress, setShowDayProgress] = useState(true);
   // ---- NEW: Additional Cards state ----
   const [riseSet, setRiseSet] = useState(null);          // {sunrise, sunset, dayLengthMs}
   const [samvatsara, setSamvatsara] = useState(null);    // {name, meta, times, progress}
@@ -409,10 +393,7 @@ export default function PanchangaLive() {
     // Show current longitudes
     const sunLonDeg = sunTropical(swe, jd);
     const moonLonDeg = moonTropical(swe, jd);
-    const { moonSid } = buildFuncs(swe);
-    setSunLon(`${sunLonDeg.toFixed(6)}°`);
-    setMoonLon(`${moonLonDeg.toFixed(6)}°`);
-    setMoonLonSid(`${moonSid(jd).toFixed(6)}°`);
+    // const { moonSid } = buildFuncs(swe);
 
     // Moon phase (Sun–Moon elongation)
     const sep = ((moonLonDeg - sunLonDeg) % 360 + 360) % 360;
@@ -443,8 +424,7 @@ export default function PanchangaLive() {
 
     const rs = computeRiseSet(swe, nowLocal, {
       lat: Number(location.lat),
-      lon: Number(location.lon),
-      alt: observerAltRef.current
+      lon: Number(location.lon)
     });
     setRiseSet(rs);
 
@@ -496,12 +476,10 @@ export default function PanchangaLive() {
     let cancelled = false;
     (async () => {
       try {
-        setStatus({ text: "Initializing Swiss Ephemeris…", cls: "warn" });
         const swe = await initSwiss();
         if (cancelled) return;
         sweRef.current = swe;
         setTopo(swe, observerLonRef.current, observerLatRef.current, observerAltRef.current);
-        setStatus({ text: "Ready (Swiss Ephemeris loaded)", cls: "ok" });
         await refresh();
         // refresh heavy calc every minute; clock label every second
         tick60 = setInterval(refresh, 60_000);
@@ -509,11 +487,6 @@ export default function PanchangaLive() {
         updateClocks();
       } catch (e) {
         console.error("Swiss Ephemeris init failed:", e);
-
-        setStatus({
-          text: `Error loading Swiss Ephemeris: ${e?.message || String(e)}`,
-          cls: "err",
-        });
       }
     })();
     return () => {

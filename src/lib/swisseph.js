@@ -23,11 +23,11 @@ export const sunTropical = (swe, jd) => norm360(swe.calc_ut(jd, swe.SE_SUN, swe.
 export const moonTropical = (swe, jd) => norm360(swe.calc_ut(jd, swe.SE_MOON, swe.SEFLG_SWIEPH)[0]);
 
 const sidFlags = (swe) => (swe.SEFLG_SWIEPH | swe.SEFLG_SIDEREAL);
-export const sunSidereal = (swe, jd) => {
+const sunSidereal = (swe, jd) => {
   swe.set_sid_mode(swe.SE_SIDM_LAHIRI, 0, 0);
   return norm360(swe.calc_ut(jd, swe.SE_SUN, sidFlags(swe))[0]);
 };
-export const moonSidereal = (swe, jd) => {
+const moonSidereal = (swe, jd) => {
   swe.set_sid_mode(swe.SE_SIDM_LAHIRI, 0, 0);
   return norm360(swe.calc_ut(jd, swe.SE_MOON, sidFlags(swe))[0]);
 };
@@ -60,6 +60,6 @@ export const buildFuncs = (swe) => {
   return {
     sepTropical,
     moonSid: (jd) => moonSidereal(swe, jd),
-    sunSid:  (jd) => sunSidereal(swe, jd),
+    sunSid: (jd) => sunSidereal(swe, jd),
   };
 };

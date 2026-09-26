@@ -49,6 +49,7 @@ import {
   PAKSHA_OPTIONS,
   TITHI_NUMBERS
 } from "./lib/tithiFinder";
+import { CITIES } from "./lib/constants";
 import LocationPicker from "./components/LocationPicker";
 import { Button } from "@heroui/react";
 import { GrFormNextLink, GrFormPreviousLink } from "react-icons/gr";
@@ -61,17 +62,23 @@ export default function PanchangaLive() {
     lon: 77.5946,
     timeZone: "Asia/Kolkata",
   };
+
   const LS_KEY = "panchanga.location";
 
   function readStoredLocation() {
     if (typeof window === "undefined") return DEFAULT_LOCATION;
+
     try {
       const raw = localStorage.getItem(LS_KEY);
+
       if (!raw) return DEFAULT_LOCATION;
+
       const obj = JSON.parse(raw);
+
       const lat = Number(obj?.lat);
       const lon = Number(obj?.lon);
       const city = typeof obj?.city === "string" ? obj.city : "";
+
       if (Number.isFinite(lat) && Number.isFinite(lon) && city) {
         return {
           city,
@@ -84,29 +91,231 @@ export default function PanchangaLive() {
         };
       }
     } catch (_) { }
+
     return DEFAULT_LOCATION;
   }
 
-  const [location, setLocation] = useState(() => readStoredLocation());
-  const locationTimeZone = location?.timeZone || "Asia/Kolkata";
+  function isValidTimeZone(timeZone) {
+    try {
+      new Intl.DateTimeFormat("en-US", {
+        timeZone,
+      }).format();
+
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function isValidDateTimeValue(value, timeZone) {
+    if (!value) return false;
+
+    const parsed = localDateTimeToDate(
+      value,
+      timeZone
+    );
+
+    if (!parsed) return false;
+
+    return toInputLocal(
+      parsed,
+      timeZone
+    ) === value;
+  }
+
+  function readUrlConfig(fallbackLocation) {
+    if (typeof window === "undefined") {
+      return {
+        location: fallbackLocation,
+        dateTime: null,
+        selectedDate: null,
+        hasUrlDateTime: false,
+      };
+    }
+
+    const params = new URLSearchParams(
+      window.location.search
+    );
+
+    // -----------------------------
+    // Location from URL
+    // -----------------------------
+    const cityParam =
+      params.get("city")?.trim() ||
+      params.get("location")?.trim() ||
+      "";
+
+    const latParam =
+      params.get("lat") ??
+      "";
+
+    const lonParam =
+      params.get("lon") ??
+      params.get("lng") ??
+      "";
+
+    const timeZoneParam =
+      params.get("tz")?.trim() ||
+      params.get("timezone")?.trim() ||
+      "";
+
+    let urlLocation = {
+      ...fallbackLocation,
+    };
+
+    // First try to match a known city.
+    if (cityParam) {
+      const knownCity = CITIES.find(
+        (city) =>
+          city.city.toLowerCase() ===
+          cityParam.toLowerCase()
+      );
+
+      if (knownCity) {
+        urlLocation = {
+          ...knownCity,
+          timeZone:
+            timeZoneParam &&
+              isValidTimeZone(timeZoneParam)
+              ? timeZoneParam
+              : fallbackLocation.timeZone ||
+              "Asia/Kolkata",
+        };
+      } else {
+        // Allow custom city names when lat/lon are supplied.
+        urlLocation.city = cityParam;
+      }
+    }
+
+    // Override coordinates when explicitly supplied.
+    const lat = Number(latParam);
+    const lon = Number(lonParam);
+
+    if (Number.isFinite(lat)) {
+      urlLocation.lat = lat;
+    }
+
+    if (Number.isFinite(lon)) {
+      urlLocation.lon = lon;
+    }
+
+    // Override timezone when supplied.
+    if (
+      timeZoneParam &&
+      isValidTimeZone(timeZoneParam)
+    ) {
+      urlLocation.timeZone = timeZoneParam;
+    }
+
+    urlLocation.timeZone =
+      urlLocation.timeZone ||
+      "Asia/Kolkata";
+
+    // -----------------------------
+    // Date and time from URL
+    // -----------------------------
+    const dateParam =
+      params.get("date")?.trim() || "";
+
+    const timeParam =
+      params.get("time")?.trim() || "";
+
+    const currentInput = toInputLocal(
+      new Date(),
+      urlLocation.timeZone
+    );
+
+    const validDate =
+      /^\d{4}-\d{2}-\d{2}$/.test(dateParam)
+        ? dateParam
+        : "";
+
+    const validTime =
+      /^\d{2}:\d{2}$/.test(timeParam)
+        ? timeParam
+        : "";
+
+    let dateTimeValue = null;
+
+    // If either date or time is supplied,
+    // use the supplied value and fill the
+    // missing part from the current date/time.
+    if (validDate || validTime) {
+      const candidate =
+        `${validDate || currentInput.slice(0, 10)}T` +
+        `${validTime || currentInput.slice(11, 16)}`;
+
+      if (
+        isValidDateTimeValue(
+          candidate,
+          urlLocation.timeZone
+        )
+      ) {
+        dateTimeValue = candidate;
+      }
+    }
+
+    const selectedDate =
+      dateTimeValue
+        ? localDateTimeToDate(
+          dateTimeValue,
+          urlLocation.timeZone
+        )
+        : null;
+
+    return {
+      location: urlLocation,
+      dateTime: dateTimeValue,
+      selectedDate,
+      hasUrlDateTime: Boolean(dateTimeValue),
+    };
+  }
+
+  const [initialConfig] = useState(() =>
+    readUrlConfig(readStoredLocation())
+  );
+
+  const [location, setLocation] = useState(
+    () => initialConfig.location
+  );
+
+  const locationTimeZone =
+    location?.timeZone || "Asia/Kolkata";
+
   const observerLatRef = useRef(location.lat);
   const observerLonRef = useRef(location.lon);
   const observerAltRef = useRef(0);
+
+  // Prevent the initial URL datetime from being
+  // overwritten by the timezone initialization effect.
+  const urlDateTimeLoadedRef = useRef(
+    initialConfig.hasUrlDateTime
+  );
 
   // --- Swiss Ephemeris instance ---
   const sweRef = useRef(null);
 
   // --- UI state ---
-  const [status, setStatus] = useState({ text: "Loading Swiss Ephemeris…", cls: "muted" });
+  const [status, setStatus] = useState({
+    text: "Loading Swiss Ephemeris…",
+    cls: "muted",
+  });
+
   const [nowString, setNowString] = useState("-");
-  const [selectedDate, setSelectedDate] = useState(null);
+
+  const [selectedDate, setSelectedDate] = useState(
+    () => initialConfig.selectedDate
+  );
+
   const [dtInputValue, setDtInputValue] = useState(
-  () =>
-    toInputLocal(
-      new Date(),
-      locationTimeZone
-    )
-);
+    () =>
+      initialConfig.dateTime ||
+      toInputLocal(
+        new Date(),
+        initialConfig.location.timeZone ||
+        "Asia/Kolkata"
+      )
+  );
 
   // Longitudes for debug/visibility panel
   const [sunLon, setSunLon] = useState("-");
@@ -247,21 +456,21 @@ export default function PanchangaLive() {
 
 
   useEffect(() => {
-  try {
-    const payload = {
-      city: String(location.city ?? "Bengaluru"),
-      lat: Number(location.lat),
-      lon: Number(location.lon),
-      timeZone: locationTimeZone,
-    };
+    try {
+      const payload = {
+        city: String(location.city ?? "Bengaluru"),
+        lat: Number(location.lat),
+        lon: Number(location.lon),
+        timeZone: locationTimeZone,
+      };
 
-    localStorage.setItem(
-      LS_KEY,
-      JSON.stringify(payload)
-    );
-  } catch (_) {
-  }
-}, [location, locationTimeZone]);
+      localStorage.setItem(
+        LS_KEY,
+        JSON.stringify(payload)
+      );
+    } catch (_) {
+    }
+  }, [location, locationTimeZone]);
 
   useEffect(() => {
     observerLatRef.current = Number(location.lat);
@@ -314,15 +523,20 @@ export default function PanchangaLive() {
     };
   }, [refresh, updateClocks]);
 
-  // Keep the datetime-local input seeded on first mount
+  // Keep URL-provided date/time in the datetime input.
+  // Otherwise, use the current date/time as before.
   useEffect(() => {
-  setDtInputValue(
-    toInputLocal(
-      new Date(),
-      locationTimeZone
-    )
-  );
-}, [locationTimeZone]);
+    if (initialConfig.hasUrlDateTime) {
+      return;
+    }
+
+    setDtInputValue(
+      toInputLocal(
+        new Date(),
+        locationTimeZone
+      )
+    );
+  }, [locationTimeZone, initialConfig.hasUrlDateTime]);
 
   // --- Handlers ---
   const onApply = useCallback(() => {
@@ -391,21 +605,21 @@ export default function PanchangaLive() {
   const onNextDay = useCallback(() => shiftDay(1), [shiftDay]);
 
 
-const onUseNow = useCallback(() => {
-  const now = new Date();
+  const onUseNow = useCallback(() => {
+    const now = new Date();
 
-  const nowStr = toInputLocal(
-    now,
-    locationTimeZone
-  );
+    const nowStr = toInputLocal(
+      now,
+      locationTimeZone
+    );
 
-  setSelectedDate(null);
-  setDtInputValue(nowStr);
-  setTimeout(refresh, 0);
-}, [
-  locationTimeZone,
-  refresh,
-]);
+    setSelectedDate(null);
+    setDtInputValue(nowStr);
+    setTimeout(refresh, 0);
+  }, [
+    locationTimeZone,
+    refresh,
+  ]);
 
   const onFindTithi = useCallback(async () => {
     const swe = sweRef.current;

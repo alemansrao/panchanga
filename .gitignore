@@ -24,3 +24,5 @@ dist-ssr
 *.sw?
 Combine-FolderContents.ps1
 CombinedContent.txt
+ProjectContext.txt
+CreateContext.ps1

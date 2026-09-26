@@ -24,7 +24,11 @@ import { TbZodiacCancer } from "react-icons/tb";
 import Card from "./components/Card";
 // ---- lib imports ----
 import { initSwiss, setTopo, sunTropical, moonTropical, buildFuncs } from "./lib/swisseph";
-import { toInputLocal } from "./lib/time";
+import {
+  toInputLocal,
+  localDateTimeToDate,
+  addDaysToLocalDateTime,
+} from "./lib/time";
 // Domain calculators
 import { computeTithi } from "./lib/tithi";
 import { computeYoga } from "./lib/yoga";
@@ -51,7 +55,12 @@ import { GrFormNextLink, GrFormPreviousLink } from "react-icons/gr";
 
 export default function PanchangaLive() {
   // ---- LocalStorage helpers ----
-  const DEFAULT_LOCATION = { "city": "Bengaluru", "lat": 12.9716, "lon": 77.5946 };
+  const DEFAULT_LOCATION = {
+    city: "Bengaluru",
+    lat: 12.9716,
+    lon: 77.5946,
+    timeZone: "Asia/Kolkata",
+  };
   const LS_KEY = "panchanga.location";
 
   function readStoredLocation() {
@@ -64,13 +73,22 @@ export default function PanchangaLive() {
       const lon = Number(obj?.lon);
       const city = typeof obj?.city === "string" ? obj.city : "";
       if (Number.isFinite(lat) && Number.isFinite(lon) && city) {
-        return { city, lat, lon };
+        return {
+          city,
+          lat,
+          lon,
+          timeZone:
+            typeof obj?.timeZone === "string"
+              ? obj.timeZone
+              : "Asia/Kolkata",
+        };
       }
     } catch (_) { }
     return DEFAULT_LOCATION;
   }
 
   const [location, setLocation] = useState(() => readStoredLocation());
+  const locationTimeZone = location?.timeZone || "Asia/Kolkata";
   const observerLatRef = useRef(location.lat);
   const observerLonRef = useRef(location.lon);
   const observerAltRef = useRef(0);
@@ -82,7 +100,13 @@ export default function PanchangaLive() {
   const [status, setStatus] = useState({ text: "Loading Swiss Ephemeris…", cls: "muted" });
   const [nowString, setNowString] = useState("-");
   const [selectedDate, setSelectedDate] = useState(null);
-  const [dtInputValue, setDtInputValue] = useState(() => toInputLocal(new Date()));
+  const [dtInputValue, setDtInputValue] = useState(
+  () =>
+    toInputLocal(
+      new Date(),
+      locationTimeZone
+    )
+);
 
   // Longitudes for debug/visibility panel
   const [sunLon, setSunLon] = useState("-");
@@ -197,7 +221,13 @@ export default function PanchangaLive() {
     setChandraMasa(computeChandraMasa(swe, jd));
     // Lagna (ascendant) depends on observer location
     try {
-      setLagna(computeLagna(swe, jd, { lat: observerLatRef.current, lon: observerLonRef.current }));
+      setLagna(
+        computeLagna(swe, jd, {
+          lat: Number(location.lat),
+          lon: Number(location.lon),
+          timeZone: locationTimeZone,
+        })
+      );
     } catch (e) {
       setLagna(null);
     }
@@ -217,16 +247,21 @@ export default function PanchangaLive() {
 
 
   useEffect(() => {
-    try {
-      const payload = {
-        city: String(location.city ?? "Bengaluru"),
-        lat: Number(location.lat),
-        lon: Number(location.lon),
-      };
-      localStorage.setItem(LS_KEY, JSON.stringify(payload));
-    } catch (_) {
-    }
-  }, [location]);
+  try {
+    const payload = {
+      city: String(location.city ?? "Bengaluru"),
+      lat: Number(location.lat),
+      lon: Number(location.lon),
+      timeZone: locationTimeZone,
+    };
+
+    localStorage.setItem(
+      LS_KEY,
+      JSON.stringify(payload)
+    );
+  } catch (_) {
+  }
+}, [location, locationTimeZone]);
 
   useEffect(() => {
     observerLatRef.current = Number(location.lat);
@@ -281,38 +316,96 @@ export default function PanchangaLive() {
 
   // Keep the datetime-local input seeded on first mount
   useEffect(() => {
-    setDtInputValue(toInputLocal(new Date()));
-  }, []);
+  setDtInputValue(
+    toInputLocal(
+      new Date(),
+      locationTimeZone
+    )
+  );
+}, [locationTimeZone]);
 
   // --- Handlers ---
   const onApply = useCallback(() => {
     if (!dtInputValue) return;
-    setSelectedDate(new Date(dtInputValue));
+
+    const parsedDate = localDateTimeToDate(
+      dtInputValue,
+      locationTimeZone
+    );
+
+    if (!parsedDate) {
+      console.error(
+        "Invalid date/time:",
+        dtInputValue,
+        locationTimeZone
+      );
+      return;
+    }
+
+    setSelectedDate(parsedDate);
     setTimeout(refresh, 0);
-  }, [dtInputValue, refresh]);
+  }, [
+    dtInputValue,
+    locationTimeZone,
+    refresh,
+  ]);
 
 
-  const shiftDay = useCallback((delta) => {
-    const base = dtInputValue ? new Date(dtInputValue) : new Date();
-    const next = new Date(base);
-    next.setDate(base.getDate() + delta);
-    const nextStr = toInputLocal(next);
+  const shiftDay = useCallback(
+    (delta) => {
+      const currentValue =
+        dtInputValue ||
+        toInputLocal(new Date(), locationTimeZone);
 
-    setDtInputValue(nextStr);
-    setSelectedDate(next);
-    setTimeout(refresh, 0);
-  }, [dtInputValue, refresh]);
+      const nextStr = addDaysToLocalDateTime(
+        currentValue,
+        delta
+      );
+
+      const nextDate = localDateTimeToDate(
+        nextStr,
+        locationTimeZone
+      );
+
+      if (!nextDate) {
+        console.error(
+          "Unable to calculate next date:",
+          nextStr,
+          locationTimeZone
+        );
+        return;
+      }
+
+      setDtInputValue(nextStr);
+      setSelectedDate(nextDate);
+      setTimeout(refresh, 0);
+    },
+    [
+      dtInputValue,
+      locationTimeZone,
+      refresh,
+    ]
+  );
 
   const onPrevDay = useCallback(() => shiftDay(-1), [shiftDay]);
   const onNextDay = useCallback(() => shiftDay(1), [shiftDay]);
 
 
-  const onUseNow = useCallback(() => {
-    const nowStr = toInputLocal(new Date());
-    setSelectedDate(null);
-    setDtInputValue(nowStr);
-    setTimeout(refresh, 0);
-  }, [refresh]);
+const onUseNow = useCallback(() => {
+  const now = new Date();
+
+  const nowStr = toInputLocal(
+    now,
+    locationTimeZone
+  );
+
+  setSelectedDate(null);
+  setDtInputValue(nowStr);
+  setTimeout(refresh, 0);
+}, [
+  locationTimeZone,
+  refresh,
+]);
 
   const onFindTithi = useCallback(async () => {
     const swe = sweRef.current;
@@ -504,7 +597,7 @@ export default function PanchangaLive() {
             <Card title="Yoga" name={yoga?.name || "-"} meta={yoga?.meta} times={yoga?.times} progress={yoga?.progress || 0} Icon={TbScale} />
             <Card title="Karana" name={karana?.name || "-"} meta={karana?.meta} times={karana?.times} progress={karana?.progress || 0} Icon={IoMdTime} />
             <Card title="Saura Māsa" name={saura?.name || "-"} meta={saura?.meta} times={saura?.times} progress={saura?.progress || 0} Icon={TiWeatherPartlySunny} />
-            <Card title="Chandra Māsa" name={chandraMasa?.name} meta={chandraMasa?.meta} times={chandraMasa?.times} Icon={HiMoon} progress={chandraMasa?.progress} barColor={chandraMasa?.isAdhika ? "bg-amber-400" : chandraMasa?.hasKshaya ? "bg-rose-400" : "bg-emerald-400"}/>
+            <Card title="Chandra Māsa" name={chandraMasa?.name} meta={chandraMasa?.meta} times={chandraMasa?.times} Icon={HiMoon} progress={chandraMasa?.progress} barColor={chandraMasa?.isAdhika ? "bg-amber-400" : chandraMasa?.hasKshaya ? "bg-rose-400" : "bg-emerald-400"} />
             <Card title="Ruthu" name={ruthu?.name || "-"} meta={ruthu?.meta} times={ruthu?.times} progress={ruthu?.progress || 0} Icon={FaCloudMoonRain} />
             <Card title="Ayana" name={ayana?.name || "-"} meta={ayana?.meta} times={ayana?.times} progress={ayana?.progress || 0} Icon={FiSun} />
             <Card title="Samvatsara" name={samvatsara?.name || "-"} meta={samvatsara?.meta} times={samvatsara?.times} progress={samvatsara?.progress || 0} Icon={FiSun} />
